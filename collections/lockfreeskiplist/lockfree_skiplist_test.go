@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/ydmxcz/gds/fn"
 )
 
 var n int
@@ -24,9 +26,7 @@ func assert(b *testing.B, cond bool, message string) {
 }
 
 func TestSkipList(t *testing.T) {
-	var sl = NewLockFreeSkipList(func(value1, value2 int) bool {
-		return value1 < value2
-	})
+	var sl = NewLockFreeSkipList(fn.Comp[int])
 	sl.Add(16)
 	sl.Add(32)
 	sl.Add(64)
@@ -38,26 +38,24 @@ func TestSkipList(t *testing.T) {
 }
 
 func TestSkipListRank(t *testing.T) {
-	var sl = NewLockFreeSkipList(func(value1, value2 interface{}) bool {
-		v1, _ := value1.(int)
-		v2, _ := value2.(int)
-		return v1 < v2
-	})
+	var sl = NewLockFreeSkipList(fn.Comp[int])
+	now := time.Now().UnixMilli()
+	fmt.Println(now, (now - now%(3)))
 	sl.Add(16)
 	sl.Add(32)
 	sl.Add(64)
 	sl.Add(128)
-	fmt.Println(sl.GetRank(15), sl.GetRank(17), sl.GetRank(16))
-	fmt.Println(sl.GetRank(30), sl.GetRank(40), sl.GetRank(32))
-	fmt.Println(sl.GetRank(60), sl.GetRank(70), sl.GetRank(64))
-	fmt.Println(sl.GetRank(120), sl.GetRank(130), sl.GetRank(128))
+	fmt.Println("size:", sl.Len())
+	fmt.Println("rank:", sl.Rank(128))
+	// fmt.Println(sl.GetRank(15), sl.GetRank(17), sl.GetRank(16))
+	// fmt.Println(sl.GetRank(30), sl.GetRank(40), sl.GetRank(32))
+	// fmt.Println(sl.GetRank(60), sl.GetRank(70), sl.GetRank(64))
+	// fmt.Println(sl.GetRank(120), sl.GetRank(130), sl.GetRank(128))
 }
 
 // Add n elements per goroutines.
 func BenchmarkRandomAdd(b *testing.B) {
-	var sl = NewLockFreeSkipList(func(value1, value2 int) bool {
-		return value1 < value2
-	})
+	var sl = NewLockFreeSkipList(fn.Comp[int])
 
 	var count int32
 	b.RunParallel(func(pb *testing.PB) {
@@ -69,16 +67,12 @@ func BenchmarkRandomAdd(b *testing.B) {
 			// }
 		}
 	})
-	assert(b, sl.GetSize() == count, "sl.GetSize() == count")
+	assert(b, sl.Len() == int(count), "sl.GetSize() == count")
 }
 
 // Remove n elements per goroutines.
 func BenchmarkRandomRemove(b *testing.B) {
-	var sl = NewLockFreeSkipList(func(value1, value2 interface{}) bool {
-		v1, _ := value1.(int)
-		v2, _ := value2.(int)
-		return v1 < v2
-	})
+	var sl = NewLockFreeSkipList(fn.Comp[int])
 	var count int32
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -96,14 +90,12 @@ func BenchmarkRandomRemove(b *testing.B) {
 			}
 		}
 	})
-	assert(b, sl.GetSize() == count, "sl.GetSize() == count")
+	assert(b, sl.Len() == int(count), "sl.GetSize() == count")
 }
 
 func BenchmarkRandomGet(b *testing.B) {
-	num := 1024
-	var sl = NewLockFreeSkipList(func(value1, value2 int) bool {
-		return value1 < value2
-	})
+	num := 102400
+	var sl = NewLockFreeSkipList(fn.Comp[int])
 	rand.Seed(time.Now().UnixNano())
 	nums := []int{}
 	for i := 0; i < num; i++ {
@@ -146,9 +138,7 @@ func (st *SafeTreeMap[K, V]) Get(key K) K {
 func BenchmarkRandomGetList(b *testing.B) {
 	num := 1024
 	var sl = &SafeTreeMap[int, int]{
-		tree: NewLockFreeSkipList(func(value1, value2 int) bool {
-			return value1 < value2
-		}),
+		tree: NewLockFreeSkipList(fn.Comp[int]),
 	}
 	rand.Seed(time.Now().UnixNano())
 	nums := []int{}
@@ -173,11 +163,7 @@ func BenchmarkRandomGetList(b *testing.B) {
 
 // Add and Remove n elements per goroutines.
 func BenchmarkRandomAddAndRemoveAndContains(b *testing.B) {
-	var sl = NewLockFreeSkipList(func(value1, value2 interface{}) bool {
-		v1, _ := value1.(int)
-		v2, _ := value2.(int)
-		return v1 < v2
-	})
+	var sl = NewLockFreeSkipList(fn.Comp[int])
 	divide := n / 3 // Make sure the total number of operations is n.
 	var count int32
 	b.RunParallel(func(pb *testing.PB) {
@@ -205,5 +191,5 @@ func BenchmarkRandomAddAndRemoveAndContains(b *testing.B) {
 			}
 		}
 	})
-	assert(b, sl.GetSize() == count, "sl.GetSize() == count")
+	assert(b, sl.Len() == int(count), "sl.GetSize() == count")
 }

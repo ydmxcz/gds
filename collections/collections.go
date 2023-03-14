@@ -51,3 +51,10 @@ type List[T any] interface {
 
 	Index(elem T) int
 }
+
+type Queue[T any] interface {
+	Push(val T) bool
+	Pop() (val T, ok bool)
+	Len() int
+	Peek() (val T, ok bool)
+}

@@ -21,6 +21,10 @@ func NewNode[T any](val T) *Node[T] {
 	}
 }
 
+func New[T any]() *Linked[T] {
+	return &Linked[T]{}
+}
+
 type Linked[T any] struct {
 	lock  sync.Mutex
 	head  Node[T]

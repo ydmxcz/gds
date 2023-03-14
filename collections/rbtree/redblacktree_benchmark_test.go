@@ -28,7 +28,7 @@ func (st *SafeRbTree[K, V]) Get(key K) V {
 }
 
 func BenchmarkRandomGet(b *testing.B) {
-	num := 1024
+	num := 102400
 	var sl = &SafeRbTree[int, int]{
 		tree: New[int, int](fn.Comp[int]),
 	}

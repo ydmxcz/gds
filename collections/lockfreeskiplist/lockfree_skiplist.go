@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/ydmxcz/gds/fn"
 )
 
 const maxLevel = 20
@@ -13,7 +15,7 @@ type LockFreeSkipList[T any] struct {
 	head *node[T]
 	tail *node[T]
 	size int32
-	comp func(value1 T, value2 T) bool
+	comp fn.Compare[T]
 }
 
 type node[T any] struct {
@@ -23,7 +25,7 @@ type node[T any] struct {
 }
 
 // NewLockFreeSkipList new a lockfree skiplist, you should pass a compare function.
-func NewLockFreeSkipList[T any](comp func(value1 T, value2 T) bool) *LockFreeSkipList[T] {
+func NewLockFreeSkipList[T any](comp fn.Compare[T]) *LockFreeSkipList[T] {
 	sl := new(LockFreeSkipList[T])
 	var defVal T
 	sl.head = newNode(maxLevel, defVal)
@@ -112,15 +114,15 @@ func (sl *LockFreeSkipList[T]) Get(value T) T {
 	return sl.get(value, &prevs, &nexts)
 }
 
-func (sl *LockFreeSkipList[T]) GetRank(value T) int {
+func (sl *LockFreeSkipList[T]) Rank(value T) int {
 	var prevs [maxLevel]*node[T]
 	var nexts [maxLevel]*node[T]
 	return sl.getRank(value, &prevs, &nexts)
 }
 
-// GetSize get the element size of skiplist.
-func (sl *LockFreeSkipList[T]) GetSize() int32 {
-	return atomic.LoadInt32(&sl.size)
+// Len get the element size of skiplist.
+func (sl *LockFreeSkipList[T]) Len() int {
+	return int(atomic.LoadInt32(&sl.size))
 }
 
 func randomLevel() int {
@@ -138,14 +140,14 @@ func (sl *LockFreeSkipList[T]) less(nd *node[T], value T) bool {
 	if sl.tail == nd {
 		return false
 	}
-	return sl.comp(nd.value, value)
+	return sl.comp(nd.value, value) < 0
 }
 
 func (sl *LockFreeSkipList[T]) equals(nd *node[T], value T) bool {
 	if sl.head == nd || sl.tail == nd {
 		return false
 	}
-	return !sl.comp(nd.value, value) && !sl.comp(value, nd.value)
+	return sl.comp(nd.value, value) == 0
 }
 
 func (sl *LockFreeSkipList[T]) get(value T, prevs *[maxLevel]*node[T], nexts *[maxLevel]*node[T]) T {
@@ -184,6 +186,12 @@ func (sl *LockFreeSkipList[T]) getRank(value T, prevs *[maxLevel]*node[T], nexts
 	var prev *node[T]
 	var cur *node[T]
 	var next *node[T]
+	s := sl.Len()
+	if s <= 1 {
+		return s
+	}
+	count := 1
+
 retry:
 	prev = sl.head
 	for level := maxLevel - 1; level >= 0; level-- {
@@ -202,13 +210,14 @@ retry:
 			if !sl.less(cur, value) {
 				break
 			}
+			count++
 			prev = cur
 			cur = next
 		}
 		prevs[level] = prev
 		nexts[level] = cur
 	}
-	return -1
+	return count
 	// return sl.equals(cur, value)
 }
 
