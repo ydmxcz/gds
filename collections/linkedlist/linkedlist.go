@@ -66,6 +66,11 @@ func (l *List[T]) ToSlice() []T {
 	return sl
 }
 
+func (l *List[T]) Clear() {
+	l.root.next = nil
+	l.len = 0
+}
+
 func (l *List[T]) Iter() iterator.Iter[T] {
 	n := &l.root
 	return func() (val T, ok bool) {
