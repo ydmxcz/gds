@@ -1,6 +1,7 @@
 package delayqueue_test
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -52,10 +53,7 @@ func TestQueue(t *testing.T) {
 		}
 		return 1
 	}, 10)
-	// q.Push(&aa{
-	// 	val:        888888,
-	// 	expiration: time.Now().Add(time.Second * 6).UnixMilli(),
-	// })
+
 	q.Push(&myObj{
 		name: "sssss",
 		exp:  time.Now().Add(time.Second * 8).UnixMilli(),
@@ -71,8 +69,10 @@ func TestQueue(t *testing.T) {
 		wg.Done()
 	}()
 	go func() {
+		ctx, _ := context.WithTimeout(context.Background(), time.Second)
+
 		// a, b := q.Pop()
-		fmt.Println(q.Pop())
+		fmt.Println(q.PopWithCtx(ctx))
 		wg.Done()
 	}()
 	wg.Wait()

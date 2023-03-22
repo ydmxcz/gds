@@ -56,6 +56,16 @@ func New[T any]() *List[T] { return new(List[T]).Init() }
 // The complexity is O(1).
 func (l *List[T]) Len() int { return l.len }
 
+func (l *List[T]) ToSlice() []T {
+	sl := make([]T, 0, l.len)
+
+	l.Iter().All(func(t T) bool {
+		sl = append(sl, t)
+		return true
+	})
+	return sl
+}
+
 func (l *List[T]) Iter() iterator.Iter[T] {
 	n := l.root.next
 	return func() (val T, ok bool) {
