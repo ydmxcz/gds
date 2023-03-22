@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ydmxcz/gds/collections/priorityqueue"
+	"github.com/ydmxcz/gds/fn"
 )
 
 type Delayed interface {
@@ -14,7 +15,7 @@ type Delayed interface {
 }
 
 type delayd[T Delayed] struct {
-	node       T
+	elem       T
 	expiration int64
 }
 
@@ -26,18 +27,18 @@ func (d *delayd[T]) Expiration() int64 {
 type DelayQueue[T Delayed] struct {
 	C chan T // 有元素过期时的通知
 
-	mutex sync.Mutex                       // 互斥锁
-	pq    *priorityqueue.Queue[*delayd[T]] // 优先队列
-
+	mutex    sync.Mutex                       // 互斥锁
+	pq       *priorityqueue.Queue[*delayd[T]] // 优先队列
+	comp     fn.Compare[T]
 	sleeping int32         // 已休眠
 	wakeupC  chan struct{} // 唤醒队列的通知
 }
 
-func NewDelayQueue[T Delayed](size int) *DelayQueue[T] {
+func NewDelayQueue[T Delayed](comp fn.Compare[T], size int) *DelayQueue[T] {
 
 	return &DelayQueue[T]{
 		C: make(chan T), // 无缓冲管道
-		pq: priorityqueue.New[*delayd[T]](func(d1, d2 *delayd[T]) int {
+		pq: priorityqueue.New(func(d1, d2 *delayd[T]) int {
 			if d1.expiration < d2.expiration {
 				return -1
 			} else if d1.expiration > d2.expiration {
@@ -46,6 +47,7 @@ func NewDelayQueue[T Delayed](size int) *DelayQueue[T] {
 				return 0
 			}
 		}, size), // 优先队列
+		comp:    comp,
 		wakeupC: make(chan struct{}), // 无缓冲管道saw
 	}
 }
@@ -55,12 +57,13 @@ func (dq *DelayQueue[T]) Push(elem T) bool {
 
 	dq.mutex.Lock()
 	dq.pq.Push(&delayd[T]{
-		node:       elem,
+		elem:       elem,
 		expiration: elem.Expiration(),
 	})
+	d, _ := dq.pq.Peek()
 	dq.mutex.Unlock()
 
-	if dq.pq.Len() == 1 {
+	if dq.comp(d.elem, elem) == 0 {
 		// 如果延迟队列为休眠状态，唤醒他
 		if atomic.CompareAndSwapInt32(&dq.sleeping, 1, 0) {
 			// 唤醒可能会发生阻塞
@@ -85,7 +88,6 @@ func (dq *DelayQueue[T]) PopWithCtx(ctx context.Context) (val T, ok bool) {
 			} else {
 				dq.pq.Pop()
 			}
-
 		}
 
 		dq.mutex.Unlock()
@@ -129,7 +131,7 @@ func (dq *DelayQueue[T]) PopWithCtx(ctx context.Context) (val T, ok bool) {
 		case <-ctx.Done():
 			goto exit
 		default:
-			return item.node, true
+			return item.elem, true
 		}
 	}
 
@@ -187,7 +189,7 @@ func (dq *DelayQueue[T]) Pop() (T, bool) {
 			}
 
 		}
-		return item.node, true
+		return item.elem, true
 	}
 }
 
@@ -201,7 +203,7 @@ func (dq *DelayQueue[T]) Poll() (val T, ok bool) {
 		if (item.expiration - time.Now().UnixMilli()) > 0 {
 			return
 		} else {
-			return item.node, true
+			return item.elem, true
 		}
 	}
 	return
