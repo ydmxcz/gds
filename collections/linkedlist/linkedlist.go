@@ -67,7 +67,7 @@ func (l *List[T]) ToSlice() []T {
 }
 
 func (l *List[T]) Iter() iterator.Iter[T] {
-	n := l.root.next
+	n := &l.root
 	return func() (val T, ok bool) {
 		if n = n.next; n != &l.root {
 			return n.Value, true

@@ -36,4 +36,12 @@ func TestLinkedListSplitableIter(t *testing.T) {
 
 func TestBoardCast(t *testing.T) {
 	// map[string]strings.Bui
+	l := linkedlist.New[int]()
+	fmt.Println(l.ToSlice())
+	l.PushBack(666)
+	fmt.Println(l.ToSlice())
+	for i := 1; i <= 10; i++ {
+		l.PushBack(i)
+	}
+	fmt.Println(l.ToSlice())
 }
