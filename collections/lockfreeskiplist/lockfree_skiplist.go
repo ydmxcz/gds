@@ -190,7 +190,7 @@ func (sl *LockFreeSkipList[T]) getRank(value T, prevs *[maxLevel]*node[T], nexts
 	if s <= 1 {
 		return s
 	}
-	count := 1
+	rank := 1
 
 retry:
 	prev = sl.head
@@ -210,14 +210,14 @@ retry:
 			if !sl.less(cur, value) {
 				break
 			}
-			count++
+			rank++
 			prev = cur
 			cur = next
 		}
 		prevs[level] = prev
 		nexts[level] = cur
 	}
-	return count
+	return rank
 	// return sl.equals(cur, value)
 }
 
