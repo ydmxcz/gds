@@ -25,8 +25,6 @@ func (d *delayd[T]) Expiration() int64 {
 
 // 延迟队列
 type DelayQueue[T Delayed] struct {
-	C chan T // 有元素过期时的通知
-
 	mutex    sync.Mutex                       // 互斥锁
 	pq       *priorityqueue.Queue[*delayd[T]] // 优先队列
 	comp     fn.Compare[T]
@@ -37,7 +35,6 @@ type DelayQueue[T Delayed] struct {
 func NewDelayQueue[T Delayed](comp fn.Compare[T], size int) *DelayQueue[T] {
 
 	return &DelayQueue[T]{
-		C: make(chan T), // 无缓冲管道
 		pq: priorityqueue.New(func(d1, d2 *delayd[T]) int {
 			if d1.expiration < d2.expiration {
 				return -1

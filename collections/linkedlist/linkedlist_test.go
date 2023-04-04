@@ -5,19 +5,21 @@ import (
 	"testing"
 
 	"github.com/ydmxcz/gds/collections/linkedlist"
-	"github.com/ydmxcz/gds/iterator"
 )
 
 func TestLinkedList(t *testing.T) {
 	l := linkedlist.New[int]()
-	for i := 0; i < 10; i++ {
-		l.PushBack(i)
-	}
-	iter, stop := iterator.CastToPull(l.Iter().All)
-	for v, ok := iter(); ok; v, ok = iter() {
-		fmt.Println(v)
-	}
-	stop()
+	e := l.PushBack(1)
+	l.Remove(e)
+	// for i := 0; i < 10; i++ {
+	// 	l.PushBack(i)
+	// }
+	// iter, stop := iterator.CastToPull(l.Iter().All)
+	// for v, ok := iter(); ok; v, ok = iter() {
+	// 	fmt.Println(v)
+	// }
+	// stop()
+	fmt.Println(l.ToSlice())
 }
 
 func TestLinkedListSplitableIter(t *testing.T) {
