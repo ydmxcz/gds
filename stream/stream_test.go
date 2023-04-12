@@ -3,38 +3,12 @@ package stream_test
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/ydmxcz/gds/collections/slice"
 	"github.com/ydmxcz/gds/stream"
 )
 
-func TestFunc(t *testing.T) {
-	sli := slice.Of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1666, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1888, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1999, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	s := sli.Stream(8)
-	stream.Collect(stream.Filter(stream.Map(s, func(a int) int {
-		// time.Sleep(time.Millisecond * 1000)
-		return a
-	}), func(a int) bool {
-		return a%2 == 0
-	}), func(a int) bool {
-		fmt.Println(a)
-		return true
-	})
-}
-
-func TestSum(t *testing.T) {
-	sli := slice.Of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	sum := stream.Fold(
-		stream.Parallel(sli.Stream(), 8), 0, func(a, b int) int {
-			// fmt.Println(a)
-			time.Sleep(300 * time.Millisecond)
-			return a + b
-		})
-	fmt.Println(sum)
-}
-
-func TestSI(t *testing.T) {
+func TestSplitableIter(t *testing.T) {
 	sli := slice.Of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1666, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1888, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1999, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 	// ps := sli.SplitableIter()(4)
 
